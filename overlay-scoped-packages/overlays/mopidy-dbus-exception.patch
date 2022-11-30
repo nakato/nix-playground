@@ -1,0 +1,27 @@
+From 8f1a91ba660786704dba964953ace077cbab902d Mon Sep 17 00:00:00 2001
+From: Mark Greenwood <fatgerman@gmail.com>
+Date: Sun, 9 Oct 2022 13:00:30 +0100
+Subject: [PATCH] Fix dbus exception where algorithm 'plain' is not supported
+
+---
+ mopidy/config/keyring.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/mopidy/config/keyring.py b/mopidy/config/keyring.py
+index 5e1b04dd11..36b1a8acbd 100644
+--- a/mopidy/config/keyring.py
++++ b/mopidy/config/keyring.py
+@@ -41,7 +41,12 @@ def fetch():
+         return []
+ 
+     service = _service(bus)
+-    session = service.OpenSession("plain", EMPTY_STRING)[1]
++    try:
++        session = service.OpenSession("plain", EMPTY_STRING)[1]
++    except dbus.exceptions.DBusException as e:
++        logger.debug("%s (%s)", FETCH_ERROR, e)
++        return []
++
+     items, locked = service.SearchItems({"service": "mopidy"})
+ 
+     if not locked and not items:
